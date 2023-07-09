@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.ndimage
 import skimage.morphology
+import skimage.measure
 
 
 # Taken and adapted to NumPy from Przemysław Pastuszka crossing_number.py (https://github.com/przemekpastuszka/biometrics)
@@ -10,11 +11,11 @@ def minutiae_at(pixels, y0, x0):
     crossings2 = np.abs(np.diff(pxvals)).sum()
 
     if pixels[y0, x0]:
-        if crossings2 == 2:
+        if crossings2 == 2: # terminacja
             return 1
-        if crossings2 == 6:
+        if crossings2 == 6: # bifurkacja
             return 3
-    return 0
+    return 0 # nic z tego
 
 # Based on Przemysław Pastuszka crossing_number.py (https://github.com/przemekpastuszka/biometrics)
 # Adapted to numpy array image representation
@@ -79,5 +80,24 @@ def minutiae_map_filtered(img):
                             footprint=np.full((erosionDist, erosionDist), True))
     termins_hull_bound = termins_hull ^ termins_hull_eroded
     minmap[termins_hull_bound] = 0 # or termins[termins_hull_bound] = False if termins is used further
+
+    for minutiaeMap, minutiaeCode in zip((bifurcs,), (3,)):
+        minutiaeLabelled, numMinutiae = skimage.morphology.label(minutiaeMap, connectivity=2, return_num=True)
+
+        for i in range(1, numMinutiae + 1): # object integer labels start from 1, because 0 is background
+            minutiaeObj = minutiaeLabelled == i
+            msize = np.sum(minutiaeObj)
+            if msize > 1: # minutiae marked with more than a single pixel are reduced
+                moments = skimage.measure.moments(minutiaeObj, order=1)
+
+                xc = np.int32(np.round(moments[1, 0] / moments[0, 0]))
+                yc = np.int32(round(moments[0, 1] / moments[0, 0]))
+
+                minmap[minutiaeObj] = 0
+                minmap[yc, xc] = minutiaeCode
+
+    #minmap[bifurcs] = 0
+    #minmap[skimage.morphology.binary_erosion(bifurcs, footprint=skimage.morphology.square(5))] = 3
+
 
     return minmap
