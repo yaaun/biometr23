@@ -82,22 +82,40 @@ def minutiae_map_filtered(img):
     minmap[termins_hull_bound] = 0 # or termins[termins_hull_bound] = False if termins is used further
 
     for minutiaeMap, minutiaeCode in zip((bifurcs,), (3,)):
-        minutiaeLabelled, numMinutiae = skimage.morphology.label(minutiaeMap, connectivity=2, return_num=True)
-
-        for i in range(1, numMinutiae + 1): # object integer labels start from 1, because 0 is background
-            minutiaeObj = minutiaeLabelled == i
-            msize = np.sum(minutiaeObj)
-            if msize > 1: # minutiae marked with more than a single pixel are reduced
-                moments = skimage.measure.moments(minutiaeObj, order=1)
-
-                xc = np.int32(np.round(moments[1, 0] / moments[0, 0]))
-                yc = np.int32(round(moments[0, 1] / moments[0, 0]))
-
-                minmap[minutiaeObj] = 0
-                minmap[yc, xc] = minutiaeCode
+        # Dilation of the found features to subsequently unify close lying objects.
+        skimage.morphology.binary_closing(minutiaeMap, footprint=full3x3, out=minutiaeMap)
+        # skimage.morphology.binary_dilation(minutiaeMap, footprint=full3x3, out=minutiaeMap)
+        # minutiaeLabelled, numMinutiae = skimage.morphology.label(minutiaeMap, connectivity=2, return_num=True)
+        #
+        # for i in range(1, numMinutiae + 1): # object integer labels start from 1, because 0 is background
+        #     minutiaeObj = minutiaeLabelled == i
+        #     msize = np.sum(minutiaeObj)
+        #     if msize > 1: # minutiae marked with more than a single pixel are reduced
+        #         moments = skimage.measure.moments(minutiaeObj, order=1)
+        #
+        #         xc = np.int32(np.round(moments[0, 1] / moments[0, 0]))
+        #         yc = np.int32(round(moments[1, 0] / moments[0, 0]))
+        #
+        #         minmap[minutiaeObj] = 0
+        #         minmap[yc, xc] = minutiaeCode
 
     #minmap[bifurcs] = 0
     #minmap[skimage.morphology.binary_erosion(bifurcs, footprint=skimage.morphology.square(5))] = 3
 
 
     return minmap
+
+
+def matrixToPolar(matrix, x0, y0):
+    assert x0 >= 0 and y0 >= 0 and x0 < matrix.shape[1] and y0 < matris.shape[0]
+
+    coordsY, coordsX = np.nonzero(matrix)
+    assert coordsX.shape == coordsY.shape
+
+    polar = np.zeros((len(coordsX), len(coordsY)))
+
+    for x, y in zip(coordsX, coordsY):
+        xc = x - x0
+        yc = y - y0
+
+
