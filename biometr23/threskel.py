@@ -12,10 +12,17 @@ def gauss(x, mu, sigma, a):
 
 
 def autothreshold(img):
-    y = np.array(img.histogram())
-    x = np.arange(0, 256)
+    PAD_LENGTH = 64
+    PAD_VAL = 0
+    #y = np.array(img.histogram())
+    y = np.pad(np.array(img.histogram()), PAD_LENGTH, constant_values=PAD_VAL)
+    x = np.arange(0 - PAD_LENGTH, 256 + PAD_LENGTH)
 
-    expected = (170, 50, 10000)  # the starting parameters for the fit
+    #expected = (170, 50, 10000)  # the starting parameters for the fit
+    #expected = (30, 20, img.width * img.height / 20)
+    #expected = (15, 10, img.width * img.height / 20)
+    expected = (15, 10, 10000)
+
     result = curve_fit(
         f=gauss,
         xdata=x,
@@ -35,7 +42,8 @@ def autothreshold(img):
     # three time standard deviation. Depending on the quality of scan it may be
     # required to choose smaller multiplier than 3.
 
-    image_binary = img.point(lambda p: 0 if p > params[0] - 3 * params[1] else 255)
+    #image_binary = img.point(lambda p: 0 if p > params[0] - 3 * params[1] else 255)
+    image_binary = img.point(lambda p: 0 if p > params[0] + 20 else 255)
 
     return img_as_bool(image_binary)
 

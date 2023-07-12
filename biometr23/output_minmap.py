@@ -14,6 +14,18 @@ def minutiae_map_to_RGB_Image(min_map):
     return PIL.Image.fromarray(outImg, "RGB")
 
 
+def minutiae_map_to_RGBA_Image(min_map):
+    termins = min_map == 1
+    bifurcs = min_map == 3
+
+    outImg = np.zeros((min_map.shape[0], min_map.shape[1], 4), dtype=np.uint8)
+
+    outImg[termins] = [255, 0, 0, 255]
+    outImg[bifurcs] = [0, 255, 0, 255]
+
+    return PIL.Image.fromarray(outImg, "RGBA")
+
+
 def overlay(base_img, over_img, alpha=0.5):
     return PIL.Image.blend(base_img, over_img, alpha)
 
@@ -28,9 +40,13 @@ def overlay_grey_bool_RGB(baseGrey, midBool, overRGB):
     Overlay (blend/compose) 3 images of different modes,
     in order: greyscale PIL.Image, boolean ndarray, RGB PIL.Image
 
-    :param baseGrey:
-    :param midBool:
-    :param overRGB:
-    :return:
+    Parameters
+    ----------
+    baseGrey : PIL.Image
+
     """
-    pass
+    assert baseGrey.mode == "L"
+    midImg = PIL.Image.fromarray(midBool * 255, "L")
+    midImgTranspMask = PIL.Image.fromarray((~midBool) * 255, "L")
+
+
