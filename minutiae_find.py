@@ -11,6 +11,7 @@ import biometr23.threskel as threskel
 from biometr23.output_minmap import \
     minutiae_map_to_RGB_Image, minutiae_map_to_RGBA_Image,\
     overlay, overlay3, overlay_grey_bool_RGB
+from biometr23.util import path_list_from_argslist
 
 
 def main():
@@ -18,27 +19,31 @@ def main():
 
     )
 
-    parser.add_argument("image_file_or_dir", type=str, nargs="+", help="The path to the image file to find minutiae in.")
-    parser.add_argument("--outputForm", choices=["overlay", "overlay3", "pixels"], default="overlay")
-    parser.add_argument("--outputDir", default=None)
-    parser.add_argument("--debugDir", default=".", dest="debugPath")
-    parser.add_argument("--dryRun", action="store_true", default=False)
-    parser.add_argument("-v", action="count", default=0)
+    parser.add_argument("image_file_or_dir", type=str, nargs="+", help="The path to the image file to find minutiae in. "
+        "Posix-style globs will be resolved.")
+    parser.add_argument("-f", "--outputForm", choices=["overlay", "overlay3", "pixels"], default="overlay3",
+                        help="Form of output. 'overlay3' blends the input image, its skeleton and the minutiae pixels. "
+                        "'pixels' outputs only minutiae locations as colored pixels (red = termination, green = bifurcation), "
+                             "with all other pixels black. "
+                        "'overlay' blends the input image and the minutiae pixels.")
+    parser.add_argument("-o", "--outputDir", default=None,
+                        help="Directory where to place output files. If not set, uses the same directory as the input file.")
+    parser.add_argument("--debugDir", "--dd", default=".",
+                        help="Debug file directory, used only when verbose mode is on. Defaults to current working directory")
+    parser.add_argument("--dryRun", "--dry", action="store_true", default=False,
+                        help="Run program, but do not read nor write any files.")
+    parser.add_argument("-v", action="count", default=0,
+                        help="Activate verbose debugging mode. Can repeat 'v' up to 2 times to increase verbosity level.")
 
     args = parser.parse_args()
 
-    dbgPath = Path(args.debugPath)
+    dbgPath = Path(args.debugDir)
     dbgLv = args.v
 
-    img_files = []
-    for i, img_pathstr_file_or_dir in enumerate(args.image_file_or_dir):
-        p = Path(img_pathstr_file_or_dir)
-        globResult = Path(".").glob(img_pathstr_file_or_dir)
-
-        img_files.extend(globResult)
+    img_files = path_list_from_argslist(args.image_file_or_dir, ".")
 
     if dbgLv >= 2:
-        print("img_files = " + repr(img_files))
+        print("img_files = " + str(img_files))
 
 
     for i, in_fname in enumerate(img_files):
