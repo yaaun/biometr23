@@ -10,7 +10,7 @@ import biometr23.minutiae as minutiae
 import biometr23.threskel as threskel
 from biometr23.output_minmap import \
     minutiae_map_to_RGB_Image, minutiae_map_to_RGBA_Image,\
-    overlay, overlay3, overlay_grey_bool_RGB
+    overlay, overlay3, overlay_grey_bool_RGBA, overlay_grey_RGBA
 from biometr23.util import path_list_from_argslist
 
 
@@ -21,11 +21,10 @@ def main():
 
     parser.add_argument("image_file_or_dir", type=str, nargs="+", help="The path to the image file to find minutiae in. "
         "Posix-style globs will be resolved.")
-    parser.add_argument("-f", "--outputForm", choices=["overlay", "overlay3", "pixels"], default="overlay3",
+    parser.add_argument("-f", "--outputForm", choices=["overlay3", "pixels"], default="overlay3",
                         help="Form of output. 'overlay3' blends the input image, its skeleton and the minutiae pixels. "
                         "'pixels' outputs only minutiae locations as colored pixels (red = termination, green = bifurcation), "
-                             "with all other pixels black. "
-                        "'overlay' blends the input image and the minutiae pixels.")
+                             "with all other pixels black.")
     parser.add_argument("-o", "--outputDir", default=None,
                         help="Directory where to place output files. If not set, uses the same directory as the input file.")
     parser.add_argument("--debugDir", "--dd", default=".",
@@ -34,6 +33,8 @@ def main():
                         help="Run program, but do not read nor write any files.")
     parser.add_argument("-T", "--threshold", type=int, dest="thresholdHint", default=None)
     parser.add_argument("-S", "--shift", type=int, dest="thresholdShift", default=None)
+    parser.add_argument("--skeletonAlpha", type=int, default=127,
+                        help="Set the transparency value (from 0 to 255) for the fingerprint skeleton in 'overlay3' output mode.")
     parser.add_argument("-v", action="count", default=0,
                         help="Activate verbose debugging mode. Can repeat 'v' up to 2 times to increase verbosity level.")
 
@@ -76,17 +77,12 @@ def main():
 
         if args.outputForm == "overlay3":
             out_name = Path(in_path.stem + "_overlay3").with_suffix(".png")
-            #over_img = minutiae_map_to_RGB_Image(minutiae_map)
-            #out_img = overlay3(img.convert("RGB"), PIL.Image.fromarray(img_skel * 255).convert("RGB"), over_img)
             over_img = minutiae_map_to_RGBA_Image(minutiae_map)
-            #out_img = overlay_grey_bool_RGB(img, img_skel, over_img)
-            out_img = overlay3(img.convert("RGBA"), PIL.Image.fromarray(img_skel * 255).convert("RGBA"), over_img)
-        elif args.outputForm == "overlay":
-            out_name = Path(in_path.stem + "_overlay").with_suffix(".png")
-            over_img = minutiae_map_to_RGB_Image(minutiae_map)
-            out_img = overlay(img.convert("RGB"), over_img)
+            out_img = overlay_grey_bool_RGBA(img, img_skel, over_img, args.skeletonAlpha)
+            #out_img = overlay3(img.convert("RGBA"), PIL.Image.fromarray(img_skel * 255).convert("RGBA"), over_img)
         elif args.outputForm == "pixels":
             out_img = minutiae_map_to_RGB_Image(minutiae_map)
+
 
         if args.outputDir is None:
             out_img.save(in_path.parent / out_name)

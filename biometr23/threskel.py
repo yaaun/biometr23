@@ -41,14 +41,14 @@ def fit_gauss_hist256(histCounts, pad_length=64, pad_val=0, paramsHint=(None, No
     return FitParamsGauss(*params)
 
 
-def create_gauss_threshold_LUT(gaussParams, meanShift):
+def create_gauss_threshold_LUT(gaussParams, meanShift=20):
     range256 = np.arange(0, 256) # 255 + 1 z powodu reguł [zamkniętego; otwartego) przedziału w Pythonie
     boolMask = range256 <= gaussParams[0] + meanShift
     lut = boolMask * 255
     return lut
 
 
-def autothreshold(img, thresh_hint=None, thresh_shift=20):
+def autothreshold(img, thresh_hint=None, thresh_shift=None):
     # If there is problem with gaussian fitting uncomment three lines below
     #  to see the histogram fit and choose better starting parameters in expected
 
@@ -67,7 +67,10 @@ def autothreshold(img, thresh_hint=None, thresh_shift=20):
     else:
         gaussParams = fit_gauss_hist256(img.histogram())
 
-    image_binary = img.point(create_gauss_threshold_LUT(gaussParams, thresh_shift))
+    if thresh_shift is not None:
+        image_binary = img.point(create_gauss_threshold_LUT(gaussParams, thresh_shift))
+    else:
+        image_binary = img.point(create_gauss_threshold_LUT(gaussParams))
 
     return img_as_bool(image_binary)
 
