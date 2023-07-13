@@ -14,7 +14,9 @@ def gauss(x, mu, sigma, a):
     return a * np.exp(-(x - mu) ** 2 / (2 * sigma ** 2))
 
 
-def fit_gauss_hist256(histCounts, pad_length=64, pad_val=0):
+
+
+def fit_gauss_hist256(histCounts, pad_length=64, pad_val=0, paramsHint=(None, None, None)):
     assert len(histCounts) == 256
 
     y = np.pad(np.asarray(histCounts), pad_length, constant_values=pad_val)
@@ -23,7 +25,11 @@ def fit_gauss_hist256(histCounts, pad_length=64, pad_val=0):
     #expected = (170, 50, 10000)  # the starting parameters for the fit
     #expected = (30, 20, img.width * img.height / 20)
     #expected = (15, 10, img.width * img.height / 20)
-    expected = (15, 10, 10000)
+    expected = (
+        paramsHint[0] if paramsHint[0] is not None else 15,
+        paramsHint[1] if paramsHint[1] is not None else 10,
+        paramsHint[2] if paramsHint[2] is not None else 10000
+    )
 
     params, covMatrix = scipy.optimize.curve_fit(
         f=gauss,
@@ -35,14 +41,14 @@ def fit_gauss_hist256(histCounts, pad_length=64, pad_val=0):
     return FitParamsGauss(*params)
 
 
-def create_gauss_threshold_LUT(gaussParams):
+def create_gauss_threshold_LUT(gaussParams, meanShift):
     range256 = np.arange(0, 256) # 255 + 1 z powodu reguł [zamkniętego; otwartego) przedziału w Pythonie
-    boolMask = range256 <= gaussParams[0] + 20
+    boolMask = range256 <= gaussParams[0] + meanShift
     lut = boolMask * 255
     return lut
 
 
-def autothreshold(img):
+def autothreshold(img, thresh_hint=None, thresh_shift=20):
     # If there is problem with gaussian fitting uncomment three lines below
     #  to see the histogram fit and choose better starting parameters in expected
 
@@ -56,8 +62,12 @@ def autothreshold(img):
 
     #image_binary = img.point(lambda p: 0 if p > params[0] - 3 * params[1] else 255)
 
-    gaussParams = fit_gauss_hist256(img.histogram())
-    image_binary = img.point(create_gauss_threshold_LUT(gaussParams))
+    if thresh_hint is not None:
+        gaussParams = fit_gauss_hist256(img.histogram(), paramsHint=(thresh_hint, None, None))
+    else:
+        gaussParams = fit_gauss_hist256(img.histogram())
+
+    image_binary = img.point(create_gauss_threshold_LUT(gaussParams, thresh_shift))
 
     return img_as_bool(image_binary)
 

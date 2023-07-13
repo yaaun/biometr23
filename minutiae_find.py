@@ -32,6 +32,8 @@ def main():
                         help="Debug file directory, used only when verbose mode is on. Defaults to current working directory")
     parser.add_argument("--dryRun", "--dry", action="store_true", default=False,
                         help="Run program, but do not read nor write any files.")
+    parser.add_argument("-T", "--threshold", type=int, dest="thresholdHint", default=None)
+    parser.add_argument("-S", "--shift", type=int, dest="thresholdShift", default=None)
     parser.add_argument("-v", action="count", default=0,
                         help="Activate verbose debugging mode. Can repeat 'v' up to 2 times to increase verbosity level.")
 
@@ -57,9 +59,10 @@ def main():
             img = img.convert("L")
 
         try:
-            img_bin = threskel.autothreshold(img) # note that this returns an ndarray, not PIL.Image
+            # note that this returns an ndarray, not PIL.Image
+            img_bin = threskel.autothreshold(img, thresh_hint=args.thresholdHint, thresh_shift=args.thresholdShift)
         except RuntimeError as e:
-            warnings.warn("autothreshold failed, skipping; error message: " + str(e))
+            warnings.warn("autothreshold failed, skipping '" + str(in_fname) + "'; error message: " + str(e))
             continue
 
         if dbgLv > 0:
