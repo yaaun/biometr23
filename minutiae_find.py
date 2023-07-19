@@ -25,7 +25,9 @@ def main():
     parser.add_argument("-f", "--outputForm", choices=["overlay3", "pixels", "polar"], default="overlay3",
                         help="Form of output. 'overlay3' (default) blends the input image, its skeleton and the minutiae pixels. "
                         "'pixels' outputs only minutiae locations as colored pixels (red = termination, green = bifurcation), "
-                             "with all other pixels black.")
+                             "with all other pixels black. 'polar' generates a tab-separated table in a text file"
+                             "containing polar coordinates of minutiae in the first two columns, relative to the binarized"
+                             "image's center of mass, and a third column with '1' indicating a termination and '3' a bifurcation.")
     parser.add_argument("-o", "--outputDir", default=None,
                         help="Directory where to place output files. If not set, uses the same directory as the input file.")
     parser.add_argument("--debugDir", "--dd", default=".",
@@ -58,6 +60,7 @@ def main():
             break
 
         in_path = Path(in_fname)
+        dbgPrefix = in_path.stem
         img = PIL.Image.open(in_path)
 
         if img.mode not in {"1", "L"}:
@@ -71,20 +74,20 @@ def main():
             continue
 
         if dbgLv >= 2:
-            skimage.io.imsave(dbgPath / f"Seq{i:03d}_DbgImg010_autothreshold.png", skimage.util.img_as_ubyte(img_bin))
+            skimage.io.imsave(dbgPath / f"{dbgPrefix}_DbgImg010_autothreshold.png", skimage.util.img_as_ubyte(img_bin))
 
         img_bin_clean = threskel.clean_binary(img_bin)
 
         if dbgLv >= 2:
-            skimage.io.imsave(dbgPath / f"Seq{i:03d}_DbgImg015_clean_binary.png", skimage.util.img_as_ubyte(img_bin_clean))
+            skimage.io.imsave(dbgPath / f"{dbgPrefix}_DbgImg015_clean_binary.png", skimage.util.img_as_ubyte(img_bin_clean))
 
         img_skel = threskel.skeletonize(img_bin_clean)
         if dbgLv >= 2:
-            skimage.io.imsave(dbgPath / f"Seq{i:03d}_DbgImg020_skeletonize.png", skimage.util.img_as_ubyte(img_skel))
+            skimage.io.imsave(dbgPath / f"{dbgPrefix}_DbgImg020_skeletonize.png", skimage.util.img_as_ubyte(img_skel))
 
         img_skel_clean = threskel.clean_skeleton(img_skel)
         if dbgLv >= 2:
-            skimage.io.imsave(dbgPath / f"Seq{i:03d}_DbgImg025_clean_skeleton.png",
+            skimage.io.imsave(dbgPath / f"{dbgPrefix}_DbgImg025_clean_skeleton.png",
                               skimage.util.img_as_ubyte(img_skel_clean))
         #
         # if dbgLv >= 2:
@@ -93,9 +96,6 @@ def main():
         #                      skimage.util.img_as_ubyte(img_skel_clean))
 
         minutiae_map = minutiae.minutiae_map_filtered(img_skel_clean)
-        #
-        # if dbgLv >= 2:
-        #     skimage.io.imsave(dbgPath / )
 
         out_img = None
         if args.outputForm == "overlay3":

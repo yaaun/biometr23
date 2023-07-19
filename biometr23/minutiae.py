@@ -84,24 +84,6 @@ def minutiae_map_filtered(img):
     for minutiaeMap, minutiaeCode in zip((bifurcs,), (3,)):
         # Dilation of the found features to subsequently unify close lying objects.
         skimage.morphology.binary_closing(minutiaeMap, footprint=full3x3, out=minutiaeMap)
-        # skimage.morphology.binary_dilation(minutiaeMap, footprint=full3x3, out=minutiaeMap)
-        # minutiaeLabelled, numMinutiae = skimage.morphology.label(minutiaeMap, connectivity=2, return_num=True)
-        #
-        # for i in range(1, numMinutiae + 1): # object integer labels start from 1, because 0 is background
-        #     minutiaeObj = minutiaeLabelled == i
-        #     msize = np.sum(minutiaeObj)
-        #     if msize > 1: # minutiae marked with more than a single pixel are reduced
-        #         moments = skimage.measure.moments(minutiaeObj, order=1)
-        #
-        #         xc = np.int32(np.round(moments[0, 1] / moments[0, 0]))
-        #         yc = np.int32(round(moments[1, 0] / moments[0, 0]))
-        #
-        #         minmap[minutiaeObj] = 0
-        #         minmap[yc, xc] = minutiaeCode
-
-    #minmap[bifurcs] = 0
-    #minmap[skimage.morphology.binary_erosion(bifurcs, footprint=skimage.morphology.square(5))] = 3
-
 
     return minmap
 
