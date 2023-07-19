@@ -106,16 +106,25 @@ def minutiae_map_filtered(img):
     return minmap
 
 
-def matrixToPolar(matrix, x0, y0):
-    assert x0 >= 0 and y0 >= 0 and x0 < matrix.shape[1] and y0 < matris.shape[0]
+def calc_CoM(binMat):
+    moments = skimage.measure.moments(binMat, order=1)
+    xc = np.int32(np.round(moments[0, 1] / moments[0, 0]))
+    yc = np.int32(round(moments[1, 0] / moments[0, 0]))
+
+    return xc, yc
+
+def bin_matrix_to_polar_coords(matrix, xc, yc):
+    assert xc >= 0 and yc >= 0 and xc < matrix.shape[1] and yc < matrix.shape[0]
 
     coordsY, coordsX = np.nonzero(matrix)
-    assert coordsX.shape == coordsY.shape
+    assert coordsX.shape == coordsY.shape and coordsX.ndim == 1 and coordsY.ndim == 1
 
-    polar = np.zeros((len(coordsX), len(coordsY)))
+    cX = coordsX - xc
+    cY = coordsY - yc
 
-    for x, y in zip(coordsX, coordsY):
-        xc = x - x0
-        yc = y - y0
+    polarTable = np.zeros((2, len(coordsX)))
 
+    polarTable[0] = np.sqrt(cX**2 + cY**2)
+    polarTable[1] = np.arctan2(cY, cX) * 180 / np.pi
 
+    return polarTable
