@@ -75,15 +75,30 @@ def autothreshold(img, thresh_hint=None, thresh_shift=None):
     return img_as_bool(image_binary)
 
 
-def skeletonize_clean(img_binary):
+def clean_binary(img_binary, obj_size=15):
+    no_holes = morphology.remove_small_holes(img_as_bool(img_binary), obj_size)
+    return no_holes
+
+def autothreshold_clean(img, thresh_hint=None, thresh_shift=None):
+    img_binary = autothreshold(img, thresh_hint, thresh_shift)
     # get rid of pores
-    no_holes = morphology.remove_small_holes(img_as_bool(img_binary), 15)
-    skeleton = morphology.thin(no_holes)
+    no_holes = clean_binary(img_binary)
+    return no_holes
+
+
+def skeletonize(img_binary):
+    return morphology.thin(img_binary)
+
+def clean_skeleton(skel_img, obj_size=5, connectivity=2):
+    return morphology.remove_small_objects(skel_img, obj_size, connectivity=connectivity)
+
+def skeletonize_clean(img_binary):
+    skeleton = morphology.thin(img_binary)
     # get rid of small artefacts
-    no_small_obj = morphology.remove_small_objects(skeleton, 5, connectivity=2)
+    no_small_obj = clean_skeleton(skeleton)
 
     return no_small_obj
 
 
 def process(img):
-    return skeletonize_clean(autothreshold(img))
+    return skeletonize_clean(autothreshold_clean(img))
